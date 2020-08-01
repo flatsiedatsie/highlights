@@ -111,8 +111,8 @@
 	          `/extensions/${this.id}/api/init`
 
 	        ).then((body) => {
-				console.log("Python API result:");
-				console.log(body);
+				//console.log("Python API result:");
+				//console.log(body);
 				//console.log(body['items']);
 				if(body['state'] == 'ok'){
 					this.items_list = body['items'];
@@ -299,8 +299,8 @@
 					for (let value_name in this.item_elements){
 						try{
 							const new_value = item.querySelectorAll('.extension-highlights-' + this.item_elements[value_name])[0].value;
-							console.log("new_value = " + new_value);
-							console.log("new_value.length = " + new_value.length);
+							//console.log("new_value = " + new_value);
+							//console.log("new_value.length = " + new_value.length);
 							if(new_value.length > 0){
 								new_values[ this.item_elements[value_name] ] = item.querySelectorAll('.extension-highlights-' + this.item_elements[value_name])[0].value;
 							}
