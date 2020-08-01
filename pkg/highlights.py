@@ -93,9 +93,7 @@ class HighlightsAPIHandler(APIHandler):
         if self.DEBUG:
             print("Highlights self.persistent_data is now: " + str(self.persistent_data))
 
-        
-        
-        
+
         try:
             self.adapter = HighlightsAdapter(self,verbose=False)
             #self.manager_proxy.add_api_handler(self.extension)
@@ -741,7 +739,7 @@ class HighlightsAdapter(Adapter):
 
     def remove_thing(self, device_id):
         if self.DEBUG:
-        print("Removing highlight thing: " + str(device_id))
+            print("Removing highlight thing: " + str(device_id))
         
         try:
             self.api_handler.delete_thing(device_id)

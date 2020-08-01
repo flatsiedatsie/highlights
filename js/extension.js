@@ -65,6 +65,8 @@
 						thing_title = things[key]['label'];
 					}
 					
+					//console.log("thing_title = " + thing_title);
+					/*
 					try{
 						if (thing_title.startsWith('highlights-') ){
 							// Skip items that are already highlight clones themselves.
@@ -74,8 +76,21 @@
 						
 					}
 					catch(e){console.log("error in creating list of things for highlights: " + e);}
-				
+					*/
+					
 					var thing_id = things[key]['href'].substr(things[key]['href'].lastIndexOf('/') + 1);
+					//console.log("thing_id = " + thing_id);
+					
+					try{
+						if (thing_id.startsWith('highlights-') ){
+							// Skip items that are already highlight clones themselves.
+							//console.log(thing_title + " starts with highlight-, so skipping.");
+							continue;
+						}
+						
+					}
+					catch(e){console.log("error in creating list of things for highlights: " + e);}
+				
 					thing_ids.push( things[key]['href'].substr(things[key]['href'].lastIndexOf('/') + 1) );
 				
 				
@@ -96,8 +111,8 @@
 	          `/extensions/${this.id}/api/init`
 
 	        ).then((body) => {
-				//console.log("Python API result:");
-				//console.log(body);
+				console.log("Python API result:");
+				console.log(body);
 				//console.log(body['items']);
 				if(body['state'] == 'ok'){
 					this.items_list = body['items'];
@@ -139,7 +154,6 @@
 			const original = document.getElementById('extension-highlights-original-item');
 			const list = document.getElementById('extension-highlights-list');
 			list.innerHTML = "";
-		
 		
 			// Loop over all items
 			for( var item in items ){
@@ -244,9 +258,14 @@
 						if( this.all_things[thing]['id'].endsWith( event['target'].value ) ){
 							const property_dropdown = event['target'].nextSibling;
 							const property_lists = this.get_property_lists(this.all_things[thing]['properties']);
-							var select_length = property_dropdown.options.length;
-							for (var i = select_length-1; i >= 0; i--) {
-								property_dropdown.options[i] = null;
+							try{
+								var select_length = property_dropdown.options.length;
+								for (var i = select_length-1; i >= 0; i--) {
+									property_dropdown.options[i] = null;
+								}
+							}
+							catch(e){
+								console.log("error clearing property dropdown select options: " + e);
 							}
 							
 							// If thing1 dropdown was changed, update its property titles
