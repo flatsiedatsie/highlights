@@ -39,7 +39,7 @@
 	  	// Click event for ADD button
 		document.getElementById("extension-highlights-add-button").addEventListener('click', () => {
 			this.items_list.push({'enabled': false});
-			this.regenerate_items(this.items_list);
+			this.regenerate_items();
 	  	});
 		
 
@@ -116,7 +116,7 @@
 				//console.log(body['items']);
 				if(body['state'] == 'ok'){
 					this.items_list = body['items'];
-					this.regenerate_items(body['items']);
+					this.regenerate_items();
 				}
 				else{
 					console.log("not ok response while getting items list");
@@ -129,7 +129,7 @@
 	  			//console.log("highlights: error in calling init via API handler");
 	  			console.log(e.toString());
 				pre.innerText = "Loading items failed - connection error";
-	        });				
+	        });		
 				
 	    });		
 
@@ -141,15 +141,19 @@
 	//  REGENERATE ITEMS
 	//
 	
-	regenerate_items(items){
+	regenerate_items(){
+		
 		//console.log("regenerating");
 		//console.log("this.all_things = ");
 		//console.log(this.all_things);
+		//console.log(this.items_list);
 		
 		//const leader_property_dropdown = document.querySelectorAll(' #extension-highlights-view #extension-highlights-original-item .extension-highlights-property2')[0];
 		//const highlight_property_dropdown = document.querySelectorAll(' #extension-highlights-view #extension-highlights-original-item .extension-highlights-property2')[0];
 		
+		
 		try {
+			const items = this.items_list
 		
 			const original = document.getElementById('extension-highlights-original-item');
 			const list = document.getElementById('extension-highlights-list');
@@ -322,8 +326,11 @@
 				//console.log(updated_values);
 				
 				
-				// Send new values to backend
 				
+				// Store the updated list
+				this.items_list = updated_values;
+				
+				// Send new values to backend
 				window.API.postJson(
 					`/extensions/${this.id}/api/update_items`,
 					{'items':updated_values}

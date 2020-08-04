@@ -293,27 +293,38 @@ class HighlightsAPIHandler(APIHandler):
                                                                 self.adapter.handle_device_added(device)
                                                                 targetDevice = self.adapter.get_device(new_thing_id)
                                                                 
-                                                                if self.DEBUG:
-                                                                    print("Creating cloned property. It's original_value will be: " + str(original_value))
-                                                                targetDevice.properties[ str(item['property1']) ] = HighlightsProperty(
-                                                                                                targetDevice,
-                                                                                                str(item['property1']),
-                                                                                                clone_property,
-                                                                                                original_value,
-                                                                                                str(item['thing1']),
-                                                                                                str(item['property1']) )
+                                                                if targetDevice != None:
+                                                                    if self.DEBUG:
+                                                                        print("Creating cloned property. It's original_value will be: " + str(original_value))
+                                                                    targetDevice.properties[ str(item['property1']) ] = HighlightsProperty(
+                                                                                                    targetDevice,
+                                                                                                    str(item['property1']),
+                                                                                                    clone_property,
+                                                                                                    original_value,
+                                                                                                    str(item['thing1']),
+                                                                                                    str(item['property1']) )
                                                                                 
-                                                                targetProperty = targetDevice.find_property( str(item['property1']) )
-                                                                self.adapter.handle_device_added(device)
-                                                                targetProperty.update(original_value)
-                                                                targetDevice.notify_property_changed(targetProperty)
+                                                                    targetProperty = targetDevice.find_property( str(item['property1']) )
+                                                                    self.adapter.handle_device_added(device)
+                                                                    targetProperty.update(original_value)
+                                                                    targetDevice.notify_property_changed(targetProperty)
+                                                                else:
+                                                                    print("Error: the target device was still None after just creating it.")
                                                                 
                                             except Exception as ex:
                                                 print("Error creating new thing: " + str(ex))      
                                         
                                         try:
-                                            targetProperty = targetDevice.find_property( str(item['property1']) )
-                                            targetProperty.update(original_value)
+                                            if targetDevice != None:
+                                                targetProperty = targetDevice.find_property( str(item['property1']) )
+                                                if targetProperty != None:
+                                                    targetProperty.update(original_value)
+                                                else:
+                                                    if self.DEBUG:
+                                                        print("Error: missing property wasn't created?")
+                                            else:
+                                                if self.DEBUG:
+                                                    print("Error: missing device wasn't created?")
                                             
                                         except Exception as ex:
                                             print("Error updating property: " + str(ex))
