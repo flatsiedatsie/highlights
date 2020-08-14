@@ -30,6 +30,7 @@
 		const pre = document.getElementById('extension-highlights-response-data');
 		//const original = document.getElementById('extension-highlights-original-item');
 		//const list = document.getElementById('extension-highlights-list');
+		const view = document.getElementById('extension-highlights-view'); 
 		
 		const leader_dropdown = document.querySelectorAll(' #extension-highlights-view #extension-highlights-original-item .extension-highlights-thing1')[0];
 		//const highlights_dropdown = document.querySelectorAll(' #extension-highlights-view #extension-highlights-original-item .extension-highlights-thing2')[0];
@@ -40,6 +41,7 @@
 		document.getElementById("extension-highlights-add-button").addEventListener('click', () => {
 			this.items_list.push({'enabled': false});
 			this.regenerate_items();
+			view.scrollTop = view.scrollHeight;
 	  	});
 		
 
@@ -198,7 +200,6 @@
 				// Populate the properties dropdown
 				try{
 					for( var thing in this.all_things ){
-						
 						//console.log("this.all_things[thing]['id'] = " + this.all_things[thing]['id']);
 						//console.log("items[item]['thing1'] = " + items[item]['thing1']);
 						
@@ -261,12 +262,18 @@
 						
 						if( this.all_things[thing]['id'].endsWith( event['target'].value ) ){
 							const property_dropdown = event['target'].nextSibling;
+							//console.log(property_dropdown);
 							const property_lists = this.get_property_lists(this.all_things[thing]['properties']);
 							try{
-								var select_length = property_dropdown.options.length;
-								for (var i = select_length-1; i >= 0; i--) {
-									property_dropdown.options[i] = null;
+								if(property_dropdown !== undefined){
+									if('options' in property_dropdown){
+										var select_length = property_dropdown.options.length;
+										for (var i = select_length-1; i >= 0; i--) {
+											property_dropdown.options[i] = null;
+										}
+									}
 								}
+								
 							}
 							catch(e){
 								console.log("error clearing property dropdown select options: " + e);
@@ -390,35 +397,9 @@
 			}
 		}
 		
-		
 		return { 'property1_list' : property1_list, 'property1_system_list' : property1_system_list };
 	}
-
-		
-		
-		
-		
-	// HELPER METHODS
 	
-	hasClass(ele,cls) {
-		//console.log(ele);
-		//console.log(cls);
-	  	return !!ele.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)'));
-	}
-
-	addClass(ele,cls) {
-	  	if (!this.hasClass(ele,cls)) ele.className += " "+cls;
-	}
-
-	removeClass(ele,cls) {
-	  	if (this.hasClass(ele,cls)) {
-	    	var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
-	    	ele.className=ele.className.replace(reg,' ');
-	  	}
-	}
-		
-		
-
   }
 
   new Highlights();
