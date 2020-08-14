@@ -32,7 +32,7 @@
 		//const list = document.getElementById('extension-highlights-list');
 		
 		const leader_dropdown = document.querySelectorAll(' #extension-highlights-view #extension-highlights-original-item .extension-highlights-thing1')[0];
-		const highlight_dropdown = document.querySelectorAll(' #extension-highlights-view #extension-highlights-original-item .extension-highlights-thing2')[0];
+		//const highlights_dropdown = document.querySelectorAll(' #extension-highlights-view #extension-highlights-original-item .extension-highlights-thing2')[0];
 	
 		pre.innerText = "";
 		

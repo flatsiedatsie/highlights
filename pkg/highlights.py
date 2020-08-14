@@ -14,12 +14,6 @@ try:
 except:
     print("Import APIHandler and APIResponse from gateway_addon failed. Use at least WebThings Gateway version 0.10")
     sys.exit(1)
-    
-try:
-    from gateway_addon import Database
-except:
-    print("Gateway python packages not loaded?!")
-    sys.exit(1)
 
 
 
@@ -49,8 +43,7 @@ class HighlightsAPIHandler(APIHandler):
             self.add_from_config()
         except Exception as ex:
             print("Error loading config: " + str(ex))
-        
-        self.DEBUG = True
+
         
         # Get complete things dictionary via API
         try:
@@ -223,7 +216,7 @@ class HighlightsAPIHandler(APIHandler):
                             #continue
                     
                         try:
-                            if key == "errorx": 
+                            if key == "error": 
                                 if api_get_result[key] == 500:
                                     print("API GET failed (500 - thing not currently connected)")
                                     #pass
