@@ -1,8 +1,12 @@
 """Highlights API handler."""
 
 
-import json
+
 import os
+from os import path
+import sys
+sys.path.append(path.join(path.dirname(path.abspath(__file__)), 'lib'))
+import json
 import time
 from time import sleep
 import requests
@@ -14,6 +18,16 @@ try:
 except:
     print("Import APIHandler and APIResponse from gateway_addon failed. Use at least WebThings Gateway version 0.10")
     sys.exit(1)
+
+
+_TIMEOUT = 3
+
+_CONFIG_PATHS = [
+    os.path.join(os.path.expanduser('~'), '.webthings', 'config'),
+]
+
+if 'WEBTHINGS_HOME' in os.environ:
+    _CONFIG_PATHS.insert(0, os.path.join(os.environ['WEBTHINGS_HOME'], 'config'))
 
 
 
@@ -55,17 +69,30 @@ class HighlightsAPIHandler(APIHandler):
             print("Error getting updated things data via API: " + str(ex))
         
         
+        
+        # temporary moving of persistence files   
+        old_location = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'data', self.addon_name,'persistence.json')
+        new_location = os.path.join(os.path.expanduser('~'), '.webthings', 'data', self.addon_name,'persistence.json')
+        
+        if os.path.isfile(old_location) and not os.path.isfile(new_location):
+            print("moving persistence file to new location: " + str(new_location))
+            os.rename(old_location, new_location)
+        
+        
         # Paths
         # Get persistent data
         try:
+            #print("self.user_profile['dataDir'] = " + str(self.user_profile))
             self.persistence_file_path = os.path.join(self.user_profile['dataDir'], self.addon_name, 'persistence.json')
         except:
             try:
-                print("setting persistence file path failed, will try older method.")
-                self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.mozilla-iot', 'data', self.addon_name,'persistence.json')
+                if self.DEBUG:
+                    print("setting persistence file path failed, will try older method.")
+                self.persistence_file_path = os.path.join(os.path.expanduser('~'), '.webthings', 'data', self.addon_name,'persistence.json')
             except:
-                print("Double error making persistence file path")
-                self.persistence_file_path = "/home/pi/.mozilla/data/" + self.addon_name + "/persistence.json"
+                if self.DEBUG:
+                    print("Double error making persistence file path")
+                self.persistence_file_path = "/home/pi/.webthings/data/" + self.addon_name + "/persistence.json"
         
         if self.DEBUG:
             print("Current working directory: " + str(os.getcwd()))
@@ -138,7 +165,8 @@ class HighlightsAPIHandler(APIHandler):
             print("self.gateway_version did not exist")
 
         # Start the internal clock
-        print("Starting the internal clock")
+        if self.DEBUG:
+            print("Starting the internal clock")
         try:            
             t = threading.Thread(target=self.clock)
             t.daemon = True
@@ -734,7 +762,7 @@ class HighlightsAdapter(Adapter):
 
         self.api_handler = api_handler
         self.name = self.api_handler.addon_name #self.__class__.__name__
-        print("adapter name = " + self.name)
+        #print("adapter name = " + self.name)
         self.adapter_name = self.api_handler.addon_name #'Highlights-adapter'
         Adapter.__init__(self, self.adapter_name, self.adapter_name, verbose=verbose)
         self.DEBUG = self.api_handler.DEBUG
