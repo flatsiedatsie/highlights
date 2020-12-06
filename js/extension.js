@@ -17,15 +17,14 @@
         .then((res) => res.text())
         .then((text) => {
          	this.content = text;
+			this.show()
         })
         .catch((e) => console.error('Failed to fetch content:', e));
     }
 
-
-
     show() {
 		this.view.innerHTML = this.content;
-	  	//console.log("highlights show called");
+	  	console.log("highlights show called");
 
 		const pre = document.getElementById('extension-highlights-response-data');
 		//const original = document.getElementById('extension-highlights-original-item');
@@ -405,5 +404,4 @@
   new Highlights();
 	
 })();
-
 
