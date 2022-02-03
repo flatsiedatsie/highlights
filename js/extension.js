@@ -25,8 +25,16 @@
     }
 
     show() {
-		this.view.innerHTML = this.content;
-	  	console.log("highlights show called");
+		//console.log("highlights show called");
+		
+		if(this.content == ''){
+			return;
+		}
+		else{
+			this.view.innerHTML = this.content;
+		}	
+		
+	  	
 
 		const pre = document.getElementById('extension-highlights-response-data');
 		//const original = document.getElementById('extension-highlights-original-item');

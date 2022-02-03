@@ -249,6 +249,7 @@ class HighlightsAPIHandler(APIHandler):
                             if key == "error": 
                                 if api_get_result[key] == 500:
                                     print("API GET failed (500 - thing not currently connected)")
+                                    time.sleep(.5)
                                     #pass
                                     #return
 
@@ -607,76 +608,137 @@ class HighlightsAPIHandler(APIHandler):
 #  API
 #
 
-    def api_get(self, api_path):
+    def api_get(self, api_path,intent='default'):
         """Returns data from the WebThings Gateway API."""
         if self.DEBUG:
             print("GET PATH = " + str(api_path))
+            #print("intent in api_get: " + str(intent))
         #print("GET TOKEN = " + str(self.token))
         if self.token == None:
-            print("PLEASE ENTER YOUR AUTHORIZATION CODE IN THE SETTINGS PAGE")
+            print("API GET: PLEASE ENTER YOUR AUTHORIZATION CODE IN THE SETTINGS PAGE")
+            self.set_status_on_thing("Authorization code missing, check settings")
             return []
         
         try:
-            r = requests.get(self.server + api_path, headers={
+            r = requests.get(self.api_server + api_path, headers={
                   'Content-Type': 'application/json',
                   'Accept': 'application/json',
                   'Authorization': 'Bearer ' + str(self.token),
                 }, verify=False, timeout=5)
-            #if self.DEBUG:
-            #    print("API GET: " + str(r.status_code) + ", " + str(r.reason))
+            if self.DEBUG:
+                print("API GET: " + str(r.status_code) + ", " + str(r.reason))
 
             if r.status_code != 200:
                 if self.DEBUG:
-                    print("API GET returned a status code that was not 200. It was: " + str(r.status_code))
-                return {"error": r.status_code}
+                    print("API returned a status code that was not 200. It was: " + str(r.status_code))
+                return {"error": str(r.status_code)}
                 
             else:
-                #if self.DEBUG:
-                #    print("API get succesfull: " + str(r.text))
+                to_return = r.text
+                try:
+                    if self.DEBUG:
+                        print("api_get: received: " + str(r))
+                    #for prop_name in r:
+                    #    print(" -> " + str(prop_name))
+                    if not '{' in r.text:
+                        if self.DEBUG:
+                            print("api_get: response was not json (gateway 1.1.0 does that). Turning into json...")
+                        
+                        if 'things/' in api_path and '/properties/' in api_path:
+                            if self.DEBUG:
+                                print("properties was in api path: " + str(api_path))
+                            likely_property_name = api_path.rsplit('/', 1)[-1]
+                            to_return = {}
+                            to_return[ likely_property_name ] = json.loads(r.text)
+                            if self.DEBUG:
+                                print("returning fixed: " + str(to_return))
+                            return to_return
+                                
+                except Exception as ex:
+                    print("api_get_fix error: " + str(ex))
+                        
+                if self.DEBUG:
+                    print("returning without 1.1.0 fix")
                 return json.loads(r.text)
             
         except Exception as ex:
-            print("Error doing " + str(api_path) + " request/loading returned json: " + str(ex))
+            print("Error doing http request/loading returned json: " + str(ex))
+            
+            if self.DEBUG:
+                self.speak("I could not connect to API. ", intent=intent)
             #return [] # or should this be {} ? Depends on the call perhaps.
             return {"error": 500}
 
 
-    def api_put(self, api_path, json_dict):
-        """Sends data to the WebThings Gateway API."""
 
-        if self.DEBUG:
-            print("PUT > api_path = " + str(api_path))
-            print("PUT > json dict = " + str(json_dict))
-            #print("PUT > self.server = " + str(self.server))
-            #print("PUT > self.token = " + str(self.token))
+    def api_put(self, api_path, json_dict, intent='default'):
+        """Sends data to the WebThings Gateway API."""
+        
+        try:
+        
+            if self.DEBUG:
+                print("PUT > api_path = " + str(api_path))
+                print("PUT > json dict = " + str(json_dict))
+                print("PUT > self.api_server = " + str(self.api_server))
+                print("PUT > intent = " + str(intent))
+                print("self.gateway_version: " + str(self.gateway_version))
+        
+            simplified = False
+            property_was = None
+            if self.gateway_version != "1.0.0":
+        
+                if 'things/' in api_path and '/properties/' in api_path:
+                    if self.DEBUG:
+                        print("PUT: properties was in api path: " + str(api_path))
+                    for bla in json_dict:
+                        property_was = bla
+                        simpler_value = json_dict[bla]
+                        json_dict = simpler_value
+                    #simpler_value = [elem[0] for elem in json_dict.values()]
+                    if self.DEBUG:
+                        print("simpler 1.1.0 value to put: " + str(simpler_value))
+                    simplified = True
+                    #likely_property_name = api_path.rsplit('/', 1)[-1]
+                    #to_return = {}
             
+            
+        except Exception as ex:
+            print("Error preparing PUT: " + str(ex))
 
         headers = {
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Authorization': 'Bearer {}'.format(self.token),
         }
         try:
             r = requests.put(
-                self.server + api_path,
+                self.api_server + api_path,
                 json=json_dict,
                 headers=headers,
                 verify=False,
-                timeout=3
+                timeout=5
             )
-            #if self.DEBUG:
-            #print("API PUT: " + str(r.status_code) + ", " + str(r.reason))
+            if self.DEBUG:
+                print("API PUT: " + str(r.status_code) + ", " + str(r.reason))
+                print("PUT returned: " + str(r.text))
 
             if r.status_code != 200:
-                #if self.DEBUG:
-                #    print("Error communicating: " + str(r.status_code))
+                if self.DEBUG:
+                    print("Error communicating: " + str(r.status_code))
                 return {"error": str(r.status_code)}
             else:
-                if self.DEBUG:
-                    print("API PUT response: " + str(r.text))
-                return json.loads(r.text)
+                if simplified:
+                    return_value = {property_was:json.loads(r.text)} # json.loads('{"' + property_was + '":' + r.text + '}')
+                else:
+                    return_value = json.loads(r.text)
+                
+                return_value['succes'] = True
+                return return_value
 
         except Exception as ex:
             print("Error doing http request/loading returned json: " + str(ex))
+            if self.DEBUG:
+                self.speak("I could not connect. ", intent=intent)
             #return {"error": "I could not connect to the web things gateway"}
             #return [] # or should this be {} ? Depends on the call perhaps.
             return {"error": 500}
