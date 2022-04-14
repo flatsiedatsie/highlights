@@ -205,8 +205,9 @@ class HighlightsAPIHandler(APIHandler):
         # Api token
         try:
             if 'Authorization token' in config:
-                self.token = str(config['Authorization token'])
-                print("-Authorization token is present in the config data.")
+                if str(config['Authorization token']) != "":
+                    self.token = str(config['Authorization token'])
+                    print("-Authorization token is present in the config data.")
         except:
             print("Error loading api token from settings")
         
@@ -397,7 +398,7 @@ class HighlightsAPIHandler(APIHandler):
                             state = 'ok'
         
                             if 'jwt' in request.body:
-                                if request.body['nwt'] != '' and request.body['nwt'] != None:
+                                if request.body['jwt'] != '' and request.body['jwt'] != None:
                                     self.token = request.body['jwt']
                                     self.persistent_data['token'] = request.body['jwt']
                                     self.save_persistent_data()

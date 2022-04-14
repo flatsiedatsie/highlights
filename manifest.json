@@ -32,11 +32,11 @@
     "schema": {
       "properties": {
         "Authorization token": {
-          "description": "advanced. This addon will copy the token from the interface whenever you visit it. Alternatively, you can generate it yourself under Settings -> Developer -> Create local authorization",
+          "description": "Advanced. This addon will copy the token from the interface whenever you visit it. Alternatively, you can generate it yourself under Settings -> Developer -> Create local authorization",
           "type": "string"
         },
         "Debugging": {
-          "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
+          "description": "Advanced. Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
           "type": "boolean"
         }			
       },
