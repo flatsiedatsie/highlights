@@ -464,8 +464,26 @@ class HighlightsAPIHandler(APIHandler):
                                                         #print("thing['properties'] = " + str(thing['properties']))
                                                             
                                                         for thing_property_key in thing['properties']:
-                                            
-                                                            property_id = thing['properties'][thing_property_key]['links'][0]['href'].rsplit('/', 1)[-1]
+                                                            
+                                                            property_id = None
+                                                            #property_id = thing['properties'][thing_property_key]['links'][0]['href'].rsplit('/', 1)[-1]
+                                                            try:
+                                                                found_links = False
+                                                                if 'links' in thing['properties'][thing_property_key]:
+                                                                    if len(thing['properties'][thing_property_key]['links']) > 0:
+                                                                        property_id = thing['properties'][thing_property_key]['links'][0]['href'].rsplit('/', 1)[-1]
+                                                                        found_links = True
+                        
+                                                                if found_links == False:
+                                                                    if 'forms' in thing['properties'][thing_property_key]:
+                                                                        if len(thing['properties'][thing_property_key]['forms']) > 0:
+                                                                            property_id = thing['properties'][thing_property_key]['forms'][0]['href'].rsplit('/', 1)[-1]
+                                                                if self.DEBUG:
+                                                                    print("property_id = " + str(property_id))
+                            
+                                                            except Exception as ex:
+                                                                print("Error extracting links/forms: " + str(ex))
+                                                            
                                                             if self.DEBUG:
                                                                 print("property_id = " + str(property_id))
                                                             if str(item['property1']) == property_id:
