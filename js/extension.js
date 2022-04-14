@@ -386,13 +386,12 @@
 	//  A helper method that generates nice lists of properties from a Gateway property dictionary
 	//
 	get_property_lists(properties){
-		//console.log("checking properties on:");
-		//console.log(properties);
 		var property1_list = []; // list of user friendly titles
 		var property1_system_list = []; // list internal property id's
+		var property2_list = [];
+		var property2_system_list = [];
 		
 		for (let prop in properties){
-			//console.log(properties[prop]);
 			var title = 'unknown';
 			if( properties[prop].hasOwnProperty('title') ){
 				title = properties[prop]['title'];
@@ -400,21 +399,78 @@
 			else if( properties[prop].hasOwnProperty('label') ){
 				title = properties[prop]['label'];
 			}
-				
+            //console.log(title);
+            
+            var system_title = null;
+            try{
+                var links_source = null;
+                if( typeof properties[prop]['forms'] != 'undefined'){
+                    if(properties[prop]['forms'].length > 0){
+                        //console.log('valid href source in forms object');
+                        links_source = 'forms';
+                        //system_title = properties[prop]['forms'][0]['href'].substr(properties[prop]['forms'][0]['href'].lastIndexOf('/') + 1);
+                    }
+                    else{
+                        //console.log("forms existed, but was empty");
+                    }
+                }
+                
+                if( links_source == null && typeof properties[prop]['links'] != 'undefined'){
+                    if(properties[prop]['links'].length > 0){
+                        //console.log('valid href source in links object');
+                        links_source = 'links';
+                    }
+                    else{
+                        //console.log("links existed, but was empty");
+                    }
+                }
+                //console.log("final links_source: " + links_source);
+                
+                if(links_source != null){
+                    system_title = properties[prop][links_source][0]['href'].substr(properties[prop][links_source][0]['href'].lastIndexOf('/') + 1);
+                }else{
+                    //console.log('Error, no valid links source found?');
+                }
+                
+                //console.log('final system_title: ' + system_title);
+            }
+            catch(e){
+                //console.log("forms/links error: " + e);
+            }
+            
 			
-			var system_title = properties[prop]['links'][0]['href'].substr(properties[prop]['links'][0]['href'].lastIndexOf('/') + 1);
-
 			// If a property is a number, add it to the list of possible source properties
-			if( properties[prop]['type'] == 'integer' || properties[prop]['type'] == 'float' || properties[prop]['type'] == 'number' || properties[prop]['type'] == 'boolean'){
+			if( properties[prop]['type'] == 'integer' || properties[prop]['type'] == 'float' || properties[prop]['type'] == 'number'){
 				
 				property1_list.push(title);
 				property1_system_list.push(system_title);
-
+				
+				// If a property is not read-only, then it can be added to the list of 'target' properties that can be changed based on a 'source' property
+				if ( 'readOnly' in properties[prop] ) { // If readOnly is set, it could still be set to 'false'.
+					if(properties[prop]['readOnly'] == false){
+						property2_list.push(title);
+						property2_system_list.push(system_title);
+					}
+				}
+				else{ // If readOnly is not set, we can asume the property is not readOnly.
+					property2_list.push(title);
+					property2_system_list.push(system_title);
+				}
 			}
 		}
 		
-		return { 'property1_list' : property1_list, 'property1_system_list' : property1_system_list };
+		// Sort lists alphabetically.
+		/*
+		property1_list.sort();
+		property1_system_list.sort();
+		property2_list.sort();
+		property2_system_list.sort();
+		*/
+		
+		return { 'property1_list' : property1_list, 'property1_system_list' : property1_system_list, 'property2_list' : property2_list,'property2_system_list' : property2_system_list };
 	}
+    
+    
 	
   }
 
