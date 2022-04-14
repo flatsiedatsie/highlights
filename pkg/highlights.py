@@ -262,7 +262,7 @@ class HighlightsAPIHandler(APIHandler):
                                     print("got this original value from API: " + str(original_value))
                             
                             
-                                if original_value is "" or original_value is None:
+                                if original_value == "" or original_value == None:
                                     #print("original value is an empty string.") # this happens if the gateway has just been rebooted, and the property doesn not have a value yet.
                                     continue
                                     
