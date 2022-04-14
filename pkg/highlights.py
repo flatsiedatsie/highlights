@@ -49,6 +49,7 @@ class HighlightsAPIHandler(APIHandler):
         self.data_types_lookup_table = {}
         self.token = None
         
+        self.clock_delay = 1 # how many seconds between updating in the clock loop
 
         
         # LOAD CONFIG
@@ -57,15 +58,6 @@ class HighlightsAPIHandler(APIHandler):
         except Exception as ex:
             print("Error loading config: " + str(ex))
 
-        
-        # Get complete things dictionary via API
-        try:
-            self.things = self.api_get("/things")
-            #print("Did the things API call. Self.things is now:")
-            #print(str(self.things))
-
-        except Exception as ex:
-            print("Error getting updated things data via API: " + str(ex))
         
         
         
@@ -135,6 +127,16 @@ class HighlightsAPIHandler(APIHandler):
         if self.token == None:
             if 'token' in self.persistent_data:
                 self.token = self.persistent_data['token']
+            
+            
+        # Get complete things dictionary via API
+        try:
+            self.things = self.api_get("/things")
+            print("Did the things API call. Self.things is now:")
+            print(str(self.things))
+
+        except Exception as ex:
+            print("Error getting updated things data via API: " + str(ex))
             
             
         # Intiate extension addon API handler
@@ -212,6 +214,11 @@ class HighlightsAPIHandler(APIHandler):
             print("Error loading api token from settings")
         
 
+        if 'Frequency' in config:
+            self.clock_delay = int(config['Frequency'])
+            if self.DEBUG:
+                print("Frequency was in config: " + str(config['Frequency']))
+
         if 'Debugging' in config:
             self.DEBUG = bool(config['Debugging'])
             if self.DEBUG:
@@ -228,30 +235,38 @@ class HighlightsAPIHandler(APIHandler):
 #
 
     def clock(self):
+        #print("in clock thread. self.DEBUG: " + str(self.DEBUG))
+        #print(str(self.persistent_data['items']))
         """ Runs every second """
         while self.running:
-            time.sleep(1)
+            time.sleep(self.clock_delay)
+            #print("tick")
             try:
                 for item in self.persistent_data['items']:
                     #print(str(item))
                     if 'thing1' in item and 'property1' in item and 'thing1_atype' in item and 'property1_atype' in item and 'enabled' in item:
-                        
+                        #print("everything is there")
                         if bool(item['enabled']) == False:
+                            #print("not enabled, skipping")
                             continue
                             
-                        api_get_result = self.api_get( '/things/' + str(item['thing1']) + '/properties/' + str(item['property1']))
-                        #print("api_get_result = " + str(api_get_result))
-                    
                         try:
+                            #print("calling api")
+                            api_get_result = self.api_get( '/things/' + str(item['thing1']) + '/properties/' + str(item['property1']))
+                            #print("api_get_result = " + str(api_get_result))
+                    
+                        
                             key = list(api_get_result.keys())[0]
                         except:
-                            print("error parsing the returned json")
+                            if self.DEBUG:
+                                print("error calling api or parsing the returned json")
                             #continue
                     
                         try:
                             if key == "error": 
                                 if api_get_result[key] == 500:
-                                    print("API GET failed (500 - thing not currently connected)")
+                                    if self.DEBUG:
+                                        print("API GET failed (500 - thing not currently connected)")
                                     time.sleep(.5)
                                     #pass
                                     #return
@@ -284,7 +299,6 @@ class HighlightsAPIHandler(APIHandler):
                                             
                                             # figure out optimal thing and property type
                                             try:
-                                                #print("self.things = " + str(self.things))
                                                 for thing in self.things:
                                                     thing_id = str(thing['id'].rsplit('/', 1)[-1])
                                                     #print("__id: " + str(thing_id))
@@ -293,7 +307,32 @@ class HighlightsAPIHandler(APIHandler):
                                                         #print("thing['properties'] = " + str(thing['properties']))
                                                         for thing_property_key in thing['properties']:
                                                             
-                                                            property_id = thing['properties'][thing_property_key]['links'][0]['href'].rsplit('/', 1)[-1]
+                                                            property_id = None
+                                                            use_forms = False
+                                                            #property_id = thing['properties'][thing_property_key]['links'][0]['href'].rsplit('/', 1)[-1]
+                                                            try:
+                                                                found_links = False
+                                                                if 'links' in thing['properties'][thing_property_key]:
+                                                                    if len(thing['properties'][thing_property_key]['links']) > 0:
+                                                                        property_id = thing['properties'][thing_property_key]['links'][0]['href'].rsplit('/', 1)[-1]
+                                                                        found_links = True
+                        
+                                                                if found_links == False:
+                                                                    if 'forms' in thing['properties'][thing_property_key]:
+                                                                        if len(thing['properties'][thing_property_key]['forms']) > 0:
+                                                                            use_forms = True
+                                                                            property_id = thing['properties'][thing_property_key]['forms'][0]['href'].rsplit('/', 1)[-1]
+
+                                                            except Exception as ex:
+                                                                if self.DEBUG:
+                                                                    print("Error extracting links/forms again: " + str(ex))
+                                                                continue
+                                                                
+                                                            if self.DEBUG:
+                                                                print("property_id = " + str(property_id))
+                                                            
+                                                            
+                                                            #property_id = thing['properties'][thing_property_key]['links'][0]['href'].rsplit('/', 1)[-1]
                                                             if str(item['property1']) == property_id:
                                                                 #print("full property: " + str(thing['properties'][thing_property_key]))
                                                                 #print("___type: " + str(thing['properties'][thing_property_key]['type']))
@@ -304,9 +343,14 @@ class HighlightsAPIHandler(APIHandler):
                                                                 clone_property = thing['properties'][thing_property_key].copy()
                                                                 clone_property['@type'] = item['property1_atype']
                                                                 
-                                                                if not clone_property['links'][0]['href'].startswith("/things/highlights-"):
-                                                                    new_href = clone_property['links'][0]['href'].replace("/things/","/things/highlights-")
-                                                                    clone_property['links'][0]['href'] = new_href
+                                                                if use_forms:
+                                                                    if not clone_property['forms'][0]['href'].startswith("/things/highlights-"):
+                                                                        new_href = clone_property['forms'][0]['href'].replace("/things/","/things/highlights-")
+                                                                        clone_property['forms'][0]['href'] = new_href
+                                                                else:
+                                                                    if not clone_property['links'][0]['href'].startswith("/things/highlights-"):
+                                                                        new_href = clone_property['links'][0]['href'].replace("/things/","/things/highlights-")
+                                                                        clone_property['links'][0]['href'] = new_href
                                                                 
                                                                 new_thing_title = "highlights " + str(item['thing1'])
                                                                 if 'title' in thing:
@@ -336,10 +380,12 @@ class HighlightsAPIHandler(APIHandler):
                                                                     targetProperty.update(original_value)
                                                                     targetDevice.notify_property_changed(targetProperty)
                                                                 else:
-                                                                    print("Error: the target device was still None after just creating it.")
+                                                                    if self.DEBUG:
+                                                                        print("Error: the target device was still None after just creating it.")
                                                                 
                                             except Exception as ex:
-                                                print("Error creating new thing: " + str(ex))      
+                                                if self.DEBUG:
+                                                    print("Error creating new thing: " + str(ex))      
                                         
                                         try:
                                             if targetDevice != None:
@@ -354,19 +400,26 @@ class HighlightsAPIHandler(APIHandler):
                                                     print("Error: missing device wasn't created?")
                                             
                                         except Exception as ex:
-                                            print("Error updating property: " + str(ex))
+                                            if self.DEBUG:
+                                                print("Error updating property: " + str(ex))
 
                                     
                                 except Exception as ex:
-                                    print("Error finding and updating property: " + str(ex))
+                                    if self.DEBUG:
+                                        print("Error finding and updating property: " + str(ex))
                                     continue
                                     
                                         
                         except Exception as ex:
-                            print("Error putting via API: " + str(ex))
-
+                            if self.DEBUG:
+                                print("Error putting via API: " + str(ex))
+                    else:
+                        if self.DEBUG:
+                            print("missing values in item")
+                            
             except Exception as ex:
-                print("Clock error: " + str(ex))              
+                if self.DEBUG:
+                    print("Clock error: " + str(ex))              
                         
                         
 
@@ -433,7 +486,8 @@ class HighlightsAPIHandler(APIHandler):
                                 self.things = self.api_get("/things")
                                 #print("Did the things API call")
                             except Exception as ex:
-                                print("Error getting updated things data via API: " + str(ex))
+                                if self.DEBUG:
+                                    print("Error getting updated things data via API: " + str(ex))
                                 
                             # try to get the correct property type (integer/float)
                             try:
@@ -459,7 +513,8 @@ class HighlightsAPIHandler(APIHandler):
                                                                     potential_atype = str(thing['@type'][0])
                                                                     
                                                         except Exception as ex:
-                                                            print("Error checking for @type in thing: " + str(ex))
+                                                            if self.DEBUG:
+                                                                print("Error checking for @type in thing: " + str(ex))
                                                             
                                                         #print("thing['properties'] = " + str(thing['properties']))
                                                             
@@ -482,10 +537,13 @@ class HighlightsAPIHandler(APIHandler):
                                                                     print("property_id = " + str(property_id))
                             
                                                             except Exception as ex:
-                                                                print("Error extracting links/forms: " + str(ex))
-                                                            
+                                                                if self.DEBUG:
+                                                                    print("Error extracting links/forms: " + str(ex))
+                                                                continue
+                                                                
                                                             if self.DEBUG:
                                                                 print("property_id = " + str(property_id))
+                                                            
                                                             if str(item['property1']) == property_id:
                                                                 try:
                                                                     #print("full property: " + str(thing['properties'][thing_property_key]))
@@ -553,19 +611,23 @@ class HighlightsAPIHandler(APIHandler):
                                                                         print("item['property1_atype'] has been deduced as: " + str(item['property1_atype']))
                                                                     
                                                                 except Exception as ex:
-                                                                    print("Error while analysing properties: " + str(ex))
+                                                                    if self.DEBUG:
+                                                                        print("Error while analysing properties: " + str(ex))
                                                                 
                                                     except Exception as ex:
-                                                        print("Error while checking for @type in thing: " + str(ex))
+                                                        if self.DEBUG:
+                                                            print("Error while checking for @type in thing: " + str(ex))
                                         
                                         
                                         except Exception as ex:
-                                            print("Error while while looping over things: " + str(ex))
+                                            if self.DEBUG:
+                                                print("Error while while looping over things: " + str(ex))
                                             continue
 
                                         
                             except Exception as ex:
-                                print("Error finding if property should be int or float: " + str(ex))
+                                if self.DEBUG:
+                                    print("Error finding if property should be int or float: " + str(ex))
                             
                             self.save_persistent_data()
                             
@@ -575,7 +637,8 @@ class HighlightsAPIHandler(APIHandler):
                                 content=json.dumps({'state' : 'ok'}),
                             )
                         except Exception as ex:
-                            print("Error saving updated items: " + str(ex))
+                            if self.DEBUG:
+                                print("Error saving updated items: " + str(ex))
                             return APIResponse(
                                 status=500,
                                 content_type='application/json',
@@ -591,7 +654,8 @@ class HighlightsAPIHandler(APIHandler):
                         
                         
                 except Exception as ex:
-                    print("Init issue: " + str(ex))
+                    if self.DEBUG:
+                        print("Init issue: " + str(ex))
                     return APIResponse(
                         status=500,
                         content_type='application/json',
@@ -602,7 +666,8 @@ class HighlightsAPIHandler(APIHandler):
                 return APIResponse(status=404)
                 
         except Exception as e:
-            print("Failed to handle UX extension API request: " + str(e))
+            if self.DEBUG:
+                print("Failed to handle UX extension API request: " + str(e))
             return APIResponse(
                 status=500,
                 content_type='application/json',
@@ -641,7 +706,7 @@ class HighlightsAPIHandler(APIHandler):
             #print("intent in api_get: " + str(intent))
         #print("GET TOKEN = " + str(self.token))
         if self.token == None:
-            print("API GET: PLEASE ENTER YOUR AUTHORIZATION CODE IN THE SETTINGS PAGE")
+            print("API GET: PLEASE ENTER AN AUTHORIZATION CODE IN THE SETTINGS PAGE")
             return []
         
         try:

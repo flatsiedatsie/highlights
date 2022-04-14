@@ -26,11 +26,28 @@
   "name": "Highlights",
   "options": {
     "default": {
-      "Aythorization token": "",
+	  "Frequency":"1",
+      "Authorization token": "",
       "Debugging": false
     },
     "schema": {
       "properties": {
+          "Frequency": {
+            "description": "The frequency with which values from the original things get synchronised with the highlight things. How many seconds between each synchronization. The default is once per second, but if you have a lot of highlights you may want to slow this down to once every 3 seconds instead.",
+            "enum": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10"
+            ],
+            "type": "string"
+          },
         "Authorization token": {
           "description": "Advanced. This addon will copy the token from the interface whenever you visit it. Alternatively, you can generate it yourself under Settings -> Developer -> Create local authorization",
           "type": "string"
