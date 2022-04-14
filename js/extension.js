@@ -100,7 +100,9 @@
 						}
 						
 					}
-					catch(e){console.log("error in creating list of things for highlights: " + e);}
+					catch(e){
+                        console.log("error in creating list of things for highlights: " + e);
+                    }
 				
 					thing_ids.push( things[key]['href'].substr(things[key]['href'].lastIndexOf('/') + 1) );
 				
@@ -114,12 +116,17 @@
 						leader_dropdown.options[leader_dropdown.options.length] = new Option(thing_title, thing_id);
 					}
 				}
-				catch(e){console.log("error in creating list of things for highlights: " + e);}
+				catch(e){
+                    console.log("error in creating list of things for highlights: " + e);
+                }
 			}
 			
+            const jwt = localStorage.getItem('jwt');
+            
 	  		// Get list of items
 	        window.API.postJson(
-	          `/extensions/${this.id}/api/init`
+	          `/extensions/${this.id}/api/init`,
+                {'jwt':jwt}
 
 	        ).then((body) => {
 				//console.log("Python API result:");
@@ -138,9 +145,9 @@
 	        }).catch((e) => {
 	          	//pre.innerText = e.toString();
 	  			//console.log("highlights: error in calling init via API handler");
-	  			console.log(e.toString());
+	  			console.log("Loading items failed - connection error: ", e);
 				pre.innerText = "Loading items failed - connection error";
-	        });		
+	        });
 				
 	    });		
 

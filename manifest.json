@@ -32,7 +32,7 @@
     "schema": {
       "properties": {
         "Authorization token": {
-          "description": "To be allowed to get information on all your devices, you have to create an 'authorization' code. It's basically a very long password. You can generate it yourself under Settings -> Developer -> Create local authorization",
+          "description": "advanced. This addon will copy the token from the interface whenever you visit it. Alternatively, you can generate it yourself under Settings -> Developer -> Create local authorization",
           "type": "string"
         },
         "Debugging": {
@@ -47,7 +47,7 @@
     }
   },
   "short_name": "Highlights",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",

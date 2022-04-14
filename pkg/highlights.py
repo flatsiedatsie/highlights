@@ -41,7 +41,7 @@ class HighlightsAPIHandler(APIHandler):
         self.addon_name = 'highlights'
         self.running = True
 
-        self.server = 'http://127.0.0.1:8080'
+        self.api_server = 'http://127.0.0.1:8080'
         self.DEV = True
         self.DEBUG = False
             
@@ -132,7 +132,9 @@ class HighlightsAPIHandler(APIHandler):
         #except:
         #    print("no user profile data")
                 
-
+        if self.token == None:
+            if 'token' in self.persistent_data:
+                self.token = self.persistent_data['token']
             
             
         # Intiate extension addon API handler
@@ -394,6 +396,12 @@ class HighlightsAPIHandler(APIHandler):
                         try:
                             state = 'ok'
         
+                            if 'jwt' in request.body:
+                                if request.body['nwt'] != '' and request.body['nwt'] != None:
+                                    self.token = request.body['jwt']
+                                    self.persistent_data['token'] = request.body['jwt']
+                                    self.save_persistent_data()
+                                    
                             # Check if a token is present
                             if self.token == None:
                                 state = 'This addon requires an authorization token to work. Visit the settings page of this addon to learn more.'
